@@ -14,4 +14,6 @@ You need all your MA players in HA to have `ma_` in their `entity_id`
 
 You need to edit `media-card.yaml` and add the friendly names for your players to the first `input_select`. These are case sensitive.
 
+You need to ensure port 8095 is enabled for the MA webserver
+
 This is provided as-is without support.
