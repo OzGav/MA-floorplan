@@ -1,0 +1,262 @@
+input_select:
+  mp_card_player_friendly_name:
+    name: Media Card Friendly Name
+    options:
+      - Kitchen Speaker
+      - Main Bedroom Speaker
+      - Rumpus Amplifier
+      - Study Player
+      - Grace Speaker
+    initial: Kitchen Speaker
+
+input_boolean:
+  mp_card_shuffle_is_on:
+    name: Media Card Shuffle Mode Tracking
+  menu_visible:
+    name: Side Menu is Visible
+    
+input_text:
+  current_playing_title:
+    name: Currently Playing Title  
+  current_playing_artist:
+    name: Currently Playing Artist  
+  current_playing_album:
+    name: Currently Playing Album  
+  current_track_quality:
+    name: Current track quality stats
+  media_card_source:
+    name: Current track source
+  next_track:
+    name: Next Track to Play
+
+template:
+  - trigger:
+    - platform: time_pattern
+      # This will update every two seconds
+      seconds: "/2" 
+    - platform: state
+      entity_id: sensor.media_card_player_id
+    sensor:   
+      - name: "URL to image"
+        unique_id: mp-card-url-to-image
+        state: >
+          {% if (state_attr(states('sensor.media_card_player_id'), 'entity_picture_local') != none) and states('sensor.media_card_player_id').state != 'unavailable' %}
+            {{ state_attr(states('sensor.media_card_player_id'), 'entity_picture_local') }}
+          {% elif (state_attr(states('sensor.media_card_player_id'), 'entity_picture') != none) and states('sensor.media_card_player_id').state != 'unavailable' %}
+            {{ state_attr(states('sensor.media_card_player_id'), 'entity_picture') }}
+          {% else %}
+            http://192.168.1.166:8123/local/empty.png
+          {% endif %}
+          
+
+  - sensor:   
+      - name: "media card player id"
+        unique_id: mp-card-player-id
+        state: >
+          {{ (expand(states.media_player) | selectattr('name' , 'search', states('input_select.mp_card_player_friendly_name'), ignorecase=true ) | select('search', 'ma_') | map(attribute='entity_id') | join) }}
+      - name: "media card selected player state"
+        unique_id: selected_player_state
+        state: >
+          {{ states(states.sensor.media_card_player_id.state) }}
+      - name: "media card shuffle mode"
+        unique_id: mc_shuffle_mode
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'shuffle') }}
+      - name: "media card mute mode"
+        unique_id: mc_mute_mode
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'is_volume_muted') }}
+      - name: "media card repeat mode"
+        unique_id: mc_repeat_mode
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'repeat') }}
+      - name: "media card volume level"
+        unique_id: mc_volume_level
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'volume_level') }}
+                  
+script:
+  get_now_playing_card:
+    mode: queued
+    alias: "Get Now Playing Media Card Info"
+    sequence:
+      - action: mass.get_queue
+        continue_on_error: true
+        data:
+          entity_id:  "{{ states.sensor.media_card_player_id.state }}"
+        response_variable: queue_info
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['items'] | float(0) > 0 }}"
+              - condition: template 
+                value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['current_item'] is defined }}"
+            sequence:
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.current_playing_artist
+                data:
+                  value: >-
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.name.split('-')[0].strip() }}
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.current_playing_title
+                data:
+                  value: >-
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.name }}
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.current_playing_album
+                data:
+                  value: >
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name }} 
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version | length > 0 -%}
+                      ({{- queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version }})
+                    {% endif -%}                    
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.current_track_quality
+                data:
+                  value: >-
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.content_type | upper}} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.sample_rate | float(0) / 1000}}k • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_depth}}bit{% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate | float(0) > 0 %} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate}}Kbps{% endif %}
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.media_card_source
+                data:
+                  value: >-
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.provider.split('-')[0].strip() }}
+              - action: input_text.set_value
+                target:
+                  entity_id: input_text.next_track
+                data:
+                  value: >-
+                    {% if (queue_info[states.sensor.media_card_player_id.state]['items'] | float(0)) - (queue_info[states.sensor.media_card_player_id.state]['current_index'] | float(0)) != 1 %}
+                      Next: {{ queue_info[states.sensor.media_card_player_id.state].next_item.name | replace('-','•')}}
+                    {% endif %}
+        default:
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.current_playing_artist
+            data:
+              value: ""
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.current_playing_title
+            data:
+              value: ""
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.current_playing_album
+            data:
+              value: ""
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.current_track_quality
+            data:
+              value: ""
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.media_card_source
+            data:
+              value: "off"
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.next_track
+            data:
+              value: ""
+  set_shuffle_mode:
+    mode: queued
+    alias: "Media Card Set Shuffle Mode"
+    sequence:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ state_attr(states.sensor.media_card_player_id.state, 'shuffle') }}"
+            sequence:
+              - action: media_player.shuffle_set
+                data:
+                  entity_id: "{{ states.sensor.media_card_player_id.state }}"
+                  shuffle: false
+        default:
+          - action: media_player.shuffle_set
+            data:
+              entity_id: "{{ states.sensor.media_card_player_id.state }}"
+              shuffle: true 
+
+  media_card_toggle_power:
+    mode: queued
+    alias: "Media Card Toggle Player Power"
+    sequence:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states[states.sensor.media_card_player_id.state].state == 'off' }}"
+            sequence:
+              - action: media_player.turn_on
+                data:
+                  entity_id: "{{ states.sensor.media_card_player_id.state }}"
+        default:
+          - action: media_player.turn_off
+            data:
+              entity_id: "{{ states.sensor.media_card_player_id.state }}"
+
+  set_repeat_mode:
+    mode: queued
+    alias: "Media Card Set Repeat Mode"
+    sequence:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ state_attr(states.sensor.media_card_player_id.state, 'repeat') == 'off' }}"
+            sequence:
+              - action: media_player.repeat_set
+                data:
+                  entity_id: "{{ states.sensor.media_card_player_id.state }}"
+                  repeat: one
+          - conditions:
+              - condition: template
+                value_template: "{{ state_attr(states.sensor.media_card_player_id.state, 'repeat') == 'one' }}"
+            sequence:
+              - action: media_player.repeat_set
+                data:
+                  entity_id: "{{ states.sensor.media_card_player_id.state }}"
+                  repeat: all
+        default:
+          - action: media_player.repeat_set
+            data:
+              entity_id: "{{ states.sensor.media_card_player_id.state }}"
+              repeat: 'off'
+              
+automation:
+  - alias: Update Now Playing Info
+    id: update_now_playing_info
+    trigger:
+      - platform: time_pattern
+        seconds: "/2"
+      - platform: state
+        entity_id: sensor.media_card_player_id
+    action:
+      - service: script.turn_on
+        target:
+          entity_id: script.get_now_playing_card
+
+  - alias: Update Shuffle Mode Status
+    id: update_shuffle_mode_status
+    trigger:
+      - platform: state
+        entity_id: sensor.media_card_player_id
+      - platform: state
+        entity_id: sensor.media_card_shuffle_mode
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ state_attr(states.sensor.media_card_player_id.state, 'shuffle') }}"
+            sequence:
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.mp_card_shuffle_is_on    
+        default:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.mp_card_shuffle_is_on  

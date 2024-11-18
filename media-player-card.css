@@ -1,0 +1,37 @@
+/* SVG shapes */
+
+svg, svg * {
+  pointer-events: all !important;
+}
+
+/* Hover over */
+
+.entity:hover {
+  stroke: #03A9F4 !important;
+  stroke-width: 1px !important;
+  stroke-opacity: 1 !important;
+}
+
+
+#layer3.invisible, #layer3.invisible * {
+  opacity: 0;
+  display: none !important;
+}
+
+#layer3.visible, #layer3.visible * {
+  opacity: 1;
+  display: inherit !important;
+}
+
+.always-invisible {
+  visibility: hidden !important; 
+  opacity: 0 !important;
+  stroke-opacity: 0 !important;
+}
+
+.always-visible {
+  visibility: visible !important;
+  opacity: 1 !important;
+  stroke-opacity: 1 !important;
+}
+
