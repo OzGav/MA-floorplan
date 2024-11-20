@@ -10,6 +10,8 @@ There are 3 files needed
 - `media-player-card.css` 
 - `media-card.yaml` This is a [package](https://www.home-assistant.io/docs/configuration/packages/)
 
+`dashboard.yml` is the frontend code which can be added via the UI or YAML
+
 You need all your MA players in HA to have `ma_` in their `entity_id`
 
 You need to edit `media-card.yaml` and add the friendly names for your players to the first `input_select`. These are case sensitive.
