@@ -1,0 +1,303 @@
+views:
+  - title: Media Player
+    panel: true
+    cards:
+      - type: custom:floorplan-card
+        config:
+          image:
+            location: /local/floorplan/media-player-card.svg
+            cache: false
+          stylesheet:
+            location: /local/floorplan/media-player-card.css
+            cache: true
+          defaults:
+            hover_action: false
+            tap_action: false
+            hold_action: false
+          rules:
+            - element: now_playing_image
+              entities:
+                - sensor.url_to_image
+              state_action:
+                service: floorplan.image_set
+                service_data: |
+                  >
+                  var image_name = entity.state;
+                  if (image_name.startsWith('http'))
+                    return entity.state;
+                  else if (image_name.startsWith('/api'))
+                    return 'http://192.168.1.166:8123' + entity.state;
+                  else
+                    return null;
+            - entity: script.media_card_toggle_power
+              tap_action:
+                service: script.turn_on
+            - element: power_button
+              state_action:
+                service: floorplan.style_set
+                service_data:
+                  style: >
+                    fill:
+                    ${(hass.states[hass.states["sensor.media_card_player_id"].state].state
+                    === "off") ? "red" : "green"}
+            - entity: sensor.media_card_mute_mode
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "True") ? "always-visible" :
+                    "always-invisible"}
+            - element: mute_player
+              entity: sensor.media_card_mute_mode
+              tap_action:
+                service: media_player.volume_mute
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  is_volume_muted: '${(entity.state === "True") ? "false" : "True"}'
+            - entity: sensor.media_card_volume_level
+              element: volume_level
+              state_action:
+                service: floorplan.text_set
+                service_data: ${Math.round(entity.state * 100) + "%"};
+            - entity: input_select.mp_card_player_friendly_name
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+              tap_action:
+                service: input_select.select_next
+            - element: volume_up
+              tap_action:
+                service: media_player.volume_up
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - element: volume_down
+              tap_action:
+                service: media_player.volume_down
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - entity: sensor.media_card_volume_level
+              state_action:
+                service: floorplan.style_set
+                service_data:
+                  element: clipPath8
+                  style: >
+                    >  var width =
+                    Math.ceil(elements['sensor.media_card_volume_level'].getBBox().width);
+                    console.log("width",width); return `transform:
+                    translate(${-Math.floor((1-entity.state) / (1 /
+                    width),0)}px)`;
+            - element: play_button
+              tap_action:
+                service: media_player.media_play_pause
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - element: player_playing
+              entity: sensor.selected_player_state
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "playing") ? "always-visible" :
+                    "always-invisible"}
+            - element: next_button
+              tap_action:
+                service: media_player.media_next_track
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - element: previous_button
+              tap_action:
+                service: media_player.media_previous_track
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - entity: script.media_card_set_shuffle_mode
+              tap_action:
+                service: script.turn_on
+            - element: shuffle_is_on
+              entity: input_boolean.mp_card_shuffle_is_on
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "on") ? "always-visible" :
+                    "always-invisible"}
+            - entity: script.set_repeat_mode
+              tap_action:
+                service: script.turn_on
+            - name: Repeat Icon
+              element: repeat_image
+              entities:
+                - sensor.media_card_repeat_mode
+              state_action:
+                service: floorplan.image_set
+                service_data: >
+                  > var imageName = ''; switch
+                  (hass.states[hass.states["sensor.media_card_player_id"].state].attributes.repeat)
+                  {
+                    case 'all':
+                      imageName = 'repeat-all';
+                      break;
+                    case 'one':
+                      imageName = 'repeat-one';
+                      break;
+                    default:
+                      imageName = 'repeat-off';
+                      break;
+                    }
+                  return '/local/floorplan/images/' + imageName + '.png';
+            - entities:
+                - input_text.current_playing_title
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+            - entities:
+                - input_text.current_playing_artist
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+            - entities:
+                - input_text.current_playing_album
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+            - name: Source Icon
+              element: media_card_source_icon
+              entities:
+                - input_text.media_card_source
+              state_action:
+                service: floorplan.image_set
+                service_data: |
+                  >
+                    var imageName = '';
+                    switch (entity.state) { 
+                      case 'spotify': imageName = 'icon-spotify'; break; 
+                      case 'off': imageName = 'off'; break;
+                      default: imageName = 'icon-local'; break; 
+                    }
+                    console.log("imagename", imageName);
+                    return '/local/floorplan/images/' + imageName + '.svg';
+            - entity: input_text.current_track_quality
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+            - entity: input_text.next_track
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+            - entity: input_boolean.menu_visible
+              tap_action:
+                service: input_boolean.toggle
+            - entity: input_boolean.menu_visible
+              element: layer3
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: '${(entity.state === "on") ? "visible" : "invisible"}'
+            - element: playlist_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      card: null
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/playlists
+            - element: album_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/albums
+            - element: artist_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/artists
+            - element: tracks_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/tracks
+            - element: radio_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/radios
+            - element: search_select
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    card_mod:
+                      style: |
+                        ha-dialog {
+                          --mdc-dialog-min-width: 1500px !important;
+                          --mdc-dialog-max-width: 850px !important;
+                        }
+                        .content {
+                          width: auto !important;
+                        }
+                    content:
+                      type: iframe
+                      url: http://192.168.1.166:8095/#/search
