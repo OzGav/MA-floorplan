@@ -58,7 +58,8 @@ views:
               element: volume_level
               state_action:
                 service: floorplan.text_set
-                service_data: ${Math.round(entity.state * 100) + "%"};
+                service_data: ${(!["unknown", "unavailable"].includes(entity.state)) ?
+                  Math.round(entity.state * 100) + "%" : "OFF"}
             - entity: input_select.mp_card_player_friendly_name
               state_action:
                 service: floorplan.text_set
