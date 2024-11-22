@@ -201,8 +201,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
@@ -220,8 +220,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
@@ -238,8 +238,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
@@ -256,8 +256,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
@@ -274,8 +274,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
@@ -292,8 +292,8 @@ views:
                     card_mod:
                       style: |
                         ha-dialog {
-                          --mdc-dialog-min-width: 1500px !important;
-                          --mdc-dialog-max-width: 850px !important;
+                          --mdc-dialog-min-width: 1250px !important;
+                          --mdc-dialog-max-width: 1850px !important;
                         }
                         .content {
                           width: auto !important;
