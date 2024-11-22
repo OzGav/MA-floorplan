@@ -90,7 +90,7 @@ script:
               - condition: template
                 value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['items'] | float(0) > 0 }}"
               - condition: template 
-                value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['current_item'] is defined }}"
+                value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['current_item'] is not none }}"
             sequence:
               - action: input_text.set_value
                 target:
@@ -118,13 +118,17 @@ script:
                   entity_id: input_text.current_track_quality
                 data:
                   value: >-
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.content_type | upper}} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.sample_rate | float(0) / 1000}}k • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_depth}}bit{% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate | float(0) > 0 %} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate}}Kbps{% endif %}
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails is not none -%}
+                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.content_type | upper}} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.sample_rate | float(0) / 1000}}k • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_depth}}bit{% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate | float(0) > 0 %} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate}}Kbps{% endif %}
+                    {% endif -%}
               - action: input_text.set_value
                 target:
                   entity_id: input_text.media_card_source
                 data:
                   value: >-
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.provider.split('-')[0].strip() }}
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails is not none -%}
+                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.provider.split('-')[0].strip() }}
+                    {% endif -%}
               - action: input_text.set_value
                 target:
                   entity_id: input_text.next_track
