@@ -92,7 +92,7 @@ views:
                 service_data:
                   entity_id: ${hass.states["sensor.media_card_player_id"].state}
             - element: player_playing
-              entity: sensor.selected_player_state
+              entity: sensor.media_card_selected_player_state
               state_action:
                 service: floorplan.class_set
                 service_data:
