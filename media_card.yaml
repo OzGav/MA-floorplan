@@ -91,6 +91,8 @@ script:
                 value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['items'] | float(0) > 0 }}"
               - condition: template 
                 value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['current_item'] is not none }}"
+              - condition: template 
+                value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['active'] }}"
             sequence:
               - action: input_text.set_value
                 target:
