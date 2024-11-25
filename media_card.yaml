@@ -100,10 +100,11 @@ script:
                 data:
                   value: >-
                     {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
-
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[0].strip() if stream_title is defined and stream_title is not none 
+                    {% set artist = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0]is defined %}
+                    
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[0].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
                      else 
-                       queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name }}
+                       queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if artist is defined and artist is not none}}
                     
               - action: input_text.set_value
                 target:
@@ -112,7 +113,7 @@ script:
                   value: >-
                     {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
 
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[1].strip() if stream_title is defined and stream_title is not none 
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[1].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
                      else 
                        queue_info[states.sensor.media_card_player_id.state].current_item.media_item.name }}
                        
@@ -120,15 +121,16 @@ script:
                 target:
                   entity_id: input_text.current_playing_album
                 data:
-                  value: >
+                  value: >-
                     {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
+                    {% set album = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album %}
 
                     {% if stream_title is defined and stream_title is not none %}
                         {{ queue_info[states.sensor.media_card_player_id.state].current_item.name }}
                     {% else %}
-                        {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name }}
-                        {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version | length > 0 %}
-                            {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version }}
+                        {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name +" " if album is not none}}
+                        {%- if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version | length > 0 -%} 
+                            ({{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version }})
                         {% endif %}
                     {% endif %}
                                           
