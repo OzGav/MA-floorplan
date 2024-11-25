@@ -187,7 +187,7 @@ script:
               entity_id: input_text.next_track
             data:
               value: ""
-  set_shuffle_mode:
+  media_card_set_shuffle_mode:
     mode: queued
     alias: "Media Card Set Shuffle Mode"
     sequence:
