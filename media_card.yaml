@@ -31,11 +31,14 @@ input_text:
 
 template:
   - trigger:
-    - platform: time_pattern
-      # This will update every two seconds
-      seconds: "/2" 
     - platform: state
       entity_id: sensor.media_card_player_id
+    - platform: state
+      entity_id: input_boolean.media_card_show_discart
+    - platform: state
+      entity_id: input_text.media_card_url_to_discart_image
+    - platform: state
+      entity_id: sensor.media_card_media_position
     sensor:   
       - name: "URL to image"
         unique_id: mp-card-url-to-image
@@ -49,11 +52,15 @@ template:
           {% endif %}
           
 
-  - sensor:   
+  - trigger:
+    - platform: state
+      entity_id: input_select.mp_card_player_friendly_name
+    sensor:   
       - name: "media card player id"
         unique_id: mp-card-player-id
         state: >
           {{ (expand(states.media_player) | selectattr('name' , 'search', states('input_select.mp_card_player_friendly_name'), ignorecase=true ) | select('search', 'ma_') | map(attribute='entity_id') | join) }}
+  = sensor:
       - name: "media card selected player state"
         unique_id: selected_player_state
         state: >
@@ -74,6 +81,10 @@ template:
         unique_id: mc_volume_level
         state: >
           {{ state_attr(states.sensor.media_card_player_id.state, 'volume_level') }}
+      - name: "media card media position"
+        unique_id: mc_media_position
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'media_position') }}
                   
 script:
   get_now_playing_card:
@@ -256,8 +267,8 @@ automation:
   - alias: Update Now Playing Info
     id: update_now_playing_info
     trigger:
-      - platform: time_pattern
-        seconds: "/2"
+      - platform: state
+        entity_id: sensor.media_card_media_position
       - platform: state
         entity_id: sensor.media_card_player_id
     action:
