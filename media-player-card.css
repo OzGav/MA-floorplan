@@ -35,3 +35,31 @@ svg, svg * {
   stroke-opacity: 1 !important;
 }
 
+@keyframes rotation {
+		from {
+				  -moz-transform: rotate(0deg);
+               -webkit-transform: rotate(0deg);
+                       transform: rotate(0deg);
+		}
+		to {
+				-moz-transform: rotate(360deg);
+             -webkit-transform: rotate(360deg);
+                     transform: rotate(360deg);
+		}
+}
+
+.rotate-on {
+/*  fill: #ff8a65 !important; */
+  stroke: #000000 !important;
+  stroke-opacity: 1 !important;
+  opacity: 1 !important;
+  animation: rotation 5s infinite linear;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rotate-off {
+  stroke: #000000 !important;
+  opacity: 1 !important;
+  stroke-opacity: 0 !important;
+}
