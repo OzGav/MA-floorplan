@@ -35,6 +35,18 @@ svg, svg * {
   stroke-opacity: 1 !important;
 }
 
+.fillheart-on {
+  fill: #000000 !important; 
+  fill-opacity: 1 !important;
+}
+
+.fillheart-off {
+  fill: #000000 !important; 
+  fill-opacity: 0 !important;
+}
+
+/* Spinning Fans code from  https://community.home-assistant.io/t/share-your-floorplan/21315/37 */
+
 @keyframes rotation {
 		from {
 				  -moz-transform: rotate(0deg);
@@ -49,7 +61,6 @@ svg, svg * {
 }
 
 .rotate-on {
-/*  fill: #ff8a65 !important; */
   stroke: #000000 !important;
   stroke-opacity: 1 !important;
   opacity: 1 !important;
