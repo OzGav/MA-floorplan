@@ -162,20 +162,10 @@ views:
                 service_data: ${entity.state}
             - name: Source Icon
               element: media_card_source_icon
-              entities:
-                - input_text.media_card_source
+              entity: input_text.media_card_source
               state_action:
                 service: floorplan.image_set
-                service_data: |
-                  >
-                    var imageName = '';
-                    switch (entity.state) { 
-                      case 'spotify': imageName = 'icon-spotify'; break; 
-                      case 'off': imageName = 'off'; break;
-                      default: imageName = 'icon-local'; break; 
-                    }
-                    console.log("imagename", imageName);
-                    return '/local/floorplan/images/' + imageName + '.svg';
+                service_data: ${entity.state}
             - entity: input_text.current_track_quality
               state_action:
                 service: floorplan.text_set
