@@ -60,7 +60,7 @@ template:
         unique_id: mp-card-player-id
         state: >
           {{ (expand(states.media_player) | selectattr('name' , 'search', states('input_select.mp_card_player_friendly_name'), ignorecase=true ) | select('search', 'ma_') | map(attribute='entity_id') | join) }}
-  = sensor:
+  - sensor:
       - name: "media card selected player state"
         unique_id: selected_player_state
         state: >
