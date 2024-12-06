@@ -10,7 +10,7 @@ There are 3 files needed
 - `media-player-card.css` 
 - `media-card.yaml` This is a [package](https://www.home-assistant.io/docs/configuration/packages/)
 
-`dashboard.yml` is the frontend code which can be added via the UI or YAML
+`dashboard.yml` is the frontend code which can be added via the UI or YAML. You need to edit the URL in there to be your MA URL
 
 You need all your MA players in HA to have `ma_` in their `entity_id`
 
