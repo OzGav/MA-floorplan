@@ -23,6 +23,16 @@ svg, svg * {
   display: inherit !important;
 }
 
+#layer5.invisible, #layer5.invisible * {
+  opacity: 0;
+  display: none !important;
+}
+
+#layer5.visible, #layer5.visible * {
+  opacity: 1;
+  display: inherit !important;
+}
+
 .always-invisible {
   visibility: hidden !important; 
   opacity: 0 !important;
