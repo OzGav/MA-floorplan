@@ -4,7 +4,7 @@ views:
     cards:
       - type: custom:floorplan-card
         config:
-          log_level: info
+#          log_level: info
           image:
             use_screen_width: false
             sizes:
