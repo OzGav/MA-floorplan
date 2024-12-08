@@ -4,31 +4,81 @@ views:
     cards:
       - type: custom:floorplan-card
         config:
+          log_level: info
           image:
-            location: /local/floorplan/media-player-card.svg
-            cache: false
+            use_screen_width: false
+            sizes:
+              - min_width: 0
+                location: /local/floorplan/media-player-card-mobile.svg
+                cache: false
+              - min_width: 700
+                location: /local/floorplan/media-player-card.svg
+                cache: false
           stylesheet:
             location: /local/floorplan/media-player-card.css
-            cache: true
+            cache: false
           defaults:
             hover_action: false
             tap_action: false
             hold_action: false
           rules:
-            - element: now_playing_image
-              entities:
-                - sensor.url_to_image
+            - entities:
+                - entity: input_boolean.media_card_update_imagery
+                  element: now_playing_image
+              tap_action:
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.media_card_show_discart
               state_action:
-                service: floorplan.image_set
-                service_data: |
-                  >
-                  var image_name = entity.state;
-                  if (image_name.startsWith('http'))
-                    return entity.state;
-                  else if (image_name.startsWith('/api'))
-                    return 'http://192.168.1.166:8123' + entity.state;
-                  else
-                    return null;
+                - service: floorplan.class_set
+                  service_data: |
+                    >
+                      if((hass.states["input_boolean.media_card_show_discart"].state
+                      == "on") &&
+                      (hass.states[hass.states["sensor.media_card_player_id"].state].state
+                      === "playing"))
+                        return "rotate-on";
+                      else 
+                        return "rotate-off";            
+                - service: floorplan.image_set
+                  service_data: |
+                    >
+                    var image_name = hass.states["sensor.url_to_image"].state;
+                    if (image_name.startsWith('http'))
+                      return hass.states["sensor.url_to_image"].state;
+                    else if (image_name.startsWith('/api'))
+                      return 'http://192.168.1.166:8123' + hass.states["sensor.url_to_image"].state;
+                    else if (image_name.startsWith('/imageproxy'))
+                      return 'http://192.168.1.166:8095' + hass.states["sensor.url_to_image"].state;
+                    else
+                      return 'http://192.168.1.166:8123/local/empty.png';
+            - entity: input_select.ma_list_of_linkable_players
+              state_action:
+                service: floorplan.text_set
+                service_data: ${entity.state}
+              tap_action:
+                service: input_select.select_next
+            - entity: input_text.media_card_explicit_language
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "true") ? "always-visible" :
+                    "always-invisible"}
+            - entity: input_text.media_card_hi_res_track
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "true") ? "always-visible" :
+                    "always-invisible"}
+            - entity: input_text.media_card_favourite
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "true") ? "fillheart-on" :
+                    "fillheart-off"}
             - entity: script.media_card_toggle_power
               tap_action:
                 service: script.turn_on
@@ -58,7 +108,8 @@ views:
               element: volume_level
               state_action:
                 service: floorplan.text_set
-                service_data: ${(!["unknown", "unavailable"].includes(entity.state)) ?
+                service_data: >-
+                  ${(!["unknown", "unavailable"].includes(entity.state)) ?
                   Math.round(entity.state * 100) + "%" : "OFF"}
             - entity: input_select.mp_card_player_friendly_name
               state_action:
@@ -84,9 +135,9 @@ views:
                   style: >
                     >  var width =
                     Math.ceil(elements['sensor.media_card_volume_level'].getBBox().width);
-                    console.log("width",width); return `transform:
-                    translate(${-Math.floor((1-entity.state) / (1 /
-                    width),0)}px)`;
+                    return `transform:
+                      translate(${-Math.floor((1-entity.state) / (1 /
+                      width),0)}px)`;
             - element: play_button
               tap_action:
                 service: media_player.media_play_pause
@@ -126,8 +177,7 @@ views:
                 service: script.turn_on
             - name: Repeat Icon
               element: repeat_image
-              entities:
-                - sensor.media_card_repeat_mode
+              entity: sensor.media_card_repeat_mode
               state_action:
                 service: floorplan.image_set
                 service_data: >
@@ -145,20 +195,21 @@ views:
                       break;
                     }
                   return '/local/floorplan/images/' + imageName + '.png';
-            - entities:
-                - input_text.current_playing_title
+            - entity: input_text.current_playing_title
               state_action:
                 service: floorplan.text_set
                 service_data: ${entity.state}
-            - entities:
-                - input_text.current_playing_artist
+            - entity: input_text.current_playing_artist
               state_action:
                 service: floorplan.text_set
                 service_data: ${entity.state}
-            - entities:
-                - input_text.current_playing_album
+            - entity: input_text.current_playing_album
               state_action:
                 service: floorplan.text_set
+                service_data: ${entity.state}
+            - entity: input_text.current_track_quality
+              state_action:
+                action: floorplan.text_set
                 service_data: ${entity.state}
             - name: Source Icon
               element: media_card_source_icon
@@ -176,7 +227,10 @@ views:
                 service_data: ${entity.state}
             - entity: input_boolean.menu_visible
               tap_action:
-                service: input_boolean.toggle
+                - service: input_boolean.toggle
+                - service: input_boolean.turn_off
+                  service_data:
+                    entity_id: input_boolean.link_menu_visible
             - entity: input_boolean.menu_visible
               element: layer3
               state_action:
@@ -185,110 +239,223 @@ views:
                   class: '${(entity.state === "on") ? "visible" : "invisible"}'
             - element: playlist_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      card: null
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/playlists
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 1200px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        card: null
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/playlists?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
             - element: album_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/albums
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 1200px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/albums?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
             - element: artist_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/artists
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 1200px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/artists?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
             - element: tracks_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/tracks
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 1200px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/tracks?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
             - element: radio_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/radios
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 1200px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/radios?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
             - element: search_select
               tap_action:
-                action: fire-dom-event
-                browser_mod:
-                  service: browser_mod.popup
-                  data:
-                    card_mod:
-                      style: |
-                        ha-dialog {
-                          --mdc-dialog-min-width: 1250px !important;
-                          --mdc-dialog-max-width: 1850px !important;
-                        }
-                        .content {
-                          width: auto !important;
-                        }
-                    content:
-                      type: iframe
-                      url: http://192.168.1.166:8095/#/search
+                - action: fire-dom-event
+                  browser_mod:
+                    service: browser_mod.popup
+                    data:
+                      card_mod:
+                        style: |
+                          ha-dialog {
+                            --mdc-dialog-min-width: 600px !important;
+                            --mdc-dialog-max-width: 1850px !important;
+                          }
+                          .content {
+                            width: auto !important;
+                          }
+                      content:
+                        type: iframe
+                        url: http://192.168.1.166:8095/#/search?frameless=true
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
+            - element: link_select
+              tap_action:
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.link_menu_visible
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.menu_visible
+            - entity: input_boolean.link_menu_visible
+              element: layer5
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: '${(entity.state === "on") ? "visible" : "invisible"}'
+            - element: close_link_menu
+              tap_action:
+                - service: input_boolean.toggle
+                  service_data:
+                    entity_id: input_boolean.link_menu_visible
+            - entity: script.media_card_join_unjoin
+              tap_action:
+                service: script.turn_on
+            - entity: input_boolean.player_is_joined
+              state_action:
+                service: floorplan.image_set
+                service_data: >
+                  ${(entity.state === "on") ?
+                  "/local/floorplan/images/checkbox-true.svg" :
+                  "/local/floorplan/images/checkbox-false.svg"}
+            - element: volume0
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0
+            - element: volume1
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.1
+            - element: volume2
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.2
+            - element: volume3
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.3
+            - element: volume4
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.4
+            - element: volume5
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.5
+            - element: volume6
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.6
+            - element: volume7
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.7
+            - element: volume8
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.8
+            - element: volume9
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 0.9
+            - element: volume10
+              tap_action:
+                service: media_player.volume_set
+                service_data:
+                  entity_id: ${hass.states["sensor.media_card_player_id"].state}
+                  volume_level: 1
