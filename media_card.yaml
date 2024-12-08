@@ -424,27 +424,6 @@ script:
             target:
               entity_id: input_select.mp_card_player_friendly_name
             
-  # skip_explicit_track:
-    # mode: queued
-    # alias: "Skip explicit track"
-    # sequence:
-      # - action: mass.get_queue
-        # continue_on_error: true
-        # data:
-          # entity_id:  media_player.ma_picoreplayer
-        # response_variable: queue_info
-      # - if:
-          # - condition: template
-            # value_template: >
-                      # {% if queue_info['media_player.ma_picoreplayer'].current_item.media_item.metadata.explicit is defined 
-                         # and queue_info['media_player.ma_picoreplayer'].current_item.media_item.metadata.explicit is not none -%}
-                        # {{ queue_info['media_player.ma_picoreplayer'].current_item.media_item.metadata.explicit | lower }}
-                      # {% endif %}
-        # then:
-          # - action: media_player.media_next_track
-            # target:
-              # entity_id: media_player.ma_picoreplayer
-             
 automation:
   - alias: Update Now Playing Info
     id: update_now_playing_info
@@ -601,15 +580,3 @@ automation:
             [{%- for entity_id in available_entities -%}
               {{- state_attr(entity_id, 'friendly_name') -}}{%- if not loop.last -%}, {%- endif -%}
             {%- endfor -%}]
-
-
-  # - id: check_for_explicit
-    # mode: queued
-    # alias: "Check for track with explicit lyrics"
-    # trigger:
-      # - platform: state
-        # entity_id: sensor.media_card_media_position
-    # action:
-      # - service: script.turn_on
-        # data:
-          # entity_id: script.skip_explicit_track
