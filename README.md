@@ -14,11 +14,11 @@ There are 3 files needed
 
 In order for the identification of like players for linking you need to suffix your MA players in HA to have the following suffix at the end of their `entity_id`
 
-- Airplay - `_provap`
-- Bluesound - `_provbs`
-- Slimproto - `_provsp`
-- Snapcast - `_provsc`
-- Sonos - `_provsn`
+- Airplay players - `_provap`
+- Bluesound players - `_provbs`
+- Slimproto players - `_provsp`
+- Snapcast players - `_provsc`
+- Sonos players - `_provsn`
 - Universal Group Players - `_provug`
 
 If you don't add the suffix then all MA players will be shown as an option to link and errors will be shown in the log if you try and link players that may not be linked.
