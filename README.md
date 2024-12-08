@@ -16,7 +16,7 @@ For the images cd.png needs to go in config/www and you need to grab this [empty
 
 All other images go in an images folder below the location of the media-player-card.svg
 
-In order for the identification of like players for linking you need to suffix your MA players in HA to have the following suffix at the end of their `entity_id`
+In order for the identification of like players for linking you need to suffix your MA players in HA to have the following suffix at the end of their `entity_id` (dont worry about player types other than those listed)
 
 - Airplay players - `_provap`
 - Bluesound players - `_provbs`
