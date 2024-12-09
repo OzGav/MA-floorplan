@@ -9,7 +9,7 @@ views:
             use_screen_width: false
             sizes:
               - min_width: 0
-                location: /local/floorplan/media-player-card-mobile.svg
+                location: /local/floorplan/media-player-card.svg
                 cache: false
               - min_width: 700
                 location: /local/floorplan/media-player-card.svg
