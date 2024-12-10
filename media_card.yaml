@@ -565,18 +565,3 @@ automation:
               {%- set media_players = ['No Matching Players'] -%}
             {%- endif -%}
             {{ media_players }}
-  - alias: Populate List of Available Players
-    id: populate_list_of_available_players
-    trigger:
-      - platform: time
-        at: "15:32:00"
-    action:
-      - service: input_select.set_options
-        target:
-          entity_id: input_select.mp_card_player_friendly_name
-        data:
-          options: |
-            {% set available_entities = integration_entities('mass') | select('is_state', ['off','playing','idle','paused'])  | list %}
-            [{%- for entity_id in available_entities -%}
-              {{- state_attr(entity_id, 'friendly_name') -}}{%- if not loop.last -%}, {%- endif -%}
-            {%- endfor -%}]
