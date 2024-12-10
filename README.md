@@ -1,3 +1,5 @@
+This requires use of the `mass.get_queue` action which is only available in the HACS Music Assistant integration
+
 To use this you need the following custom components added via HACS
 
 - [ha-floorplan](https://github.com/ExperienceLovelace/ha-floorplan)
@@ -12,9 +14,9 @@ There are 3 files needed
 
 `dashboard.yml` is the frontend code which can be added via the UI or YAML. You need to edit the URL in there to be your MA URL
 
-For the images cd.png needs to go in config/www and you need to grab this [empty.png](https://upload.wikimedia.org/wikipedia/commons/5/59/Empty.png) and place it in that folder as well
+For the images `cd.png` needs to go in config/www and you need to grab this [empty.png](https://upload.wikimedia.org/wikipedia/commons/5/59/Empty.png) and place it in that folder as well
 
-All other images go in an images folder below the location of the media-player-card.svg
+All other images go in an `images` folder below the location of the `media-player-card.svg`
 
 In order for the identification of like players for linking you need to suffix your MA players in HA to have the following suffix at the end of their `entity_id` (dont worry about player types other than those listed)
 
