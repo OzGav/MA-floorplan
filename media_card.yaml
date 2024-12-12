@@ -416,6 +416,8 @@ script:
               
   media_card_skip_unavailable_player:
     sequence:
+      - delay:
+          milliseconds: 10
       - if:
           - condition: template
             value_template: '{{ states(states("sensor.media_card_player_id")) in ["unavailable","unknown"] }}'
