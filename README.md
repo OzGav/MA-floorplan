@@ -1,3 +1,5 @@
+![card](https://github.com/user-attachments/assets/82eee4b1-1cbf-4ac1-bc48-9a35b0135a10)
+
 This requires use of the `mass.get_queue` action which is only available in the HACS Music Assistant integration
 
 To use this you need the following custom components added via HACS
