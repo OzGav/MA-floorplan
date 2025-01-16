@@ -37,6 +37,8 @@ You need to edit `media-card.yaml` and add the friendly names for your players t
 
 You need to ensure port 8095 is enabled for the MA webserver
 
+You need to ensure the MA player custom name are identical to the HA friendly name
+
 There appears to be a couple of bugs in get_queue which will get fixed eventually. Sometimes the next item is not shown correctly, sometimes an error is thrown when a player doesn't have an active queue and sometimes the URL to the disc art is not returned.
 
 This is provided as-is without support.
