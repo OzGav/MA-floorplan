@@ -4,10 +4,16 @@ views:
     cards:
       - type: custom:floorplan-card
         config:
-#          log_level: info
+          log_level: info
           image:
-            location: /local/floorplan/media-player-card.svg
-            cache: false
+            use_screen_width: false
+            sizes:
+              - min_width: 0
+                location: /local/floorplan/media-player-card-mobile.svg
+                cache: false
+              - min_width: 700
+                location: /local/floorplan/media-player-card.svg
+                cache: true
           stylesheet:
             location: /local/floorplan/media-player-card.css
             cache: false
@@ -233,129 +239,194 @@ views:
                   class: '${(entity.state === "on") ? "visible" : "invisible"}'
             - element: playlist_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 1200px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        card: null
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/playlists?frameless=true
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/playlists?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
                 - service: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: album_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 1200px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/albums?frameless=true
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/albums?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
                 - service: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: artist_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 1200px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/artists?frameless=true
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/artists?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
                 - service: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: tracks_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 1200px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/tracks?frameless=true
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/tracks?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
                 - service: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: radio_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 1200px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/radios?frameless=true
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/radios?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
                 - service: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: search_select
               tap_action:
-                - action: fire-dom-event
-                  browser_mod:
-                    service: browser_mod.popup
-                    data:
-                      card_mod:
-                        style: |
-                          ha-dialog {
-                            --mdc-dialog-min-width: 600px !important;
-                            --mdc-dialog-max-width: 1850px !important;
-                          }
-                          .content {
-                            width: auto !important;
-                          }
-                      content:
-                        type: iframe
-                        url: http://192.168.1.166:8095/#/search?frameless=true
-                - service: input_boolean.toggle
+                - service: floorplan.execute
+                  service_data:
+                    my_custom_exec_calling_browser_mod: |
+                      >
+                      try{
+                        const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        browser_mod.service('popup',{
+                          title: "Search",
+                          content: 
+                            {
+                              type: "iframe",
+                              url: `http://192.168.1.166:8095/#/search?frameless=true&player=${player_friendly_name}`,
+                            },
+                            card_mod: {
+                              style: `
+                                ha-dialog {
+                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-max-width: 1850px !important;
+                                }
+                                .content {
+                                  width: auto !important;
+                              }`
+                            }
+                        });
+                      }catch(e){
+                        console.log("Well.. That didn't go as planned",e);
+                      }
+                - action: input_boolean.toggle
                   service_data:
                     entity_id: input_boolean.menu_visible
             - element: link_select
