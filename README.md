@@ -1,10 +1,4 @@
-![card](https://github.com/user-attachments/assets/82eee4b1-1cbf-4ac1-bc48-9a35b0135a10)
-
-
-
 https://github.com/user-attachments/assets/3465043f-428d-4b56-9452-7132eab2cab1
-
-
 
 This requires use of the `music_assistant.get_queue` action which is only available the with the official Music Assistant integration. Music Assistant 2.4 or later is also required.
 
