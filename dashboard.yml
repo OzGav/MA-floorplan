@@ -47,11 +47,11 @@ views:
                     if (image_name.startsWith('http'))
                       return hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/api'))
-                      return 'http://192.168.1.166:8123' + hass.states["sensor.url_to_image"].state;
+                      return 'http://myaurouter.ddns.net:8123' + hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/imageproxy'))
                       return 'http://192.168.1.166:8095' + hass.states["sensor.url_to_image"].state;
                     else
-                      return 'http://192.168.1.166:8123/local/empty.png';
+                      return 'http://myaurouter.ddns.net:8123/local/empty.png';
             - entity: input_select.ma_list_of_linkable_players
               state_action:
                 service: floorplan.text_set
@@ -79,6 +79,9 @@ views:
                   class: >-
                     ${(entity.state === "true") ? "fillheart-on" :
                     "fillheart-off"}
+            - entity: script.media_card_toggle_favourite
+              tap_action:
+                service: script.turn_on
             - entity: script.media_card_toggle_power
               tap_action:
                 service: script.turn_on
@@ -131,7 +134,7 @@ views:
               state_action:
                 service: floorplan.style_set
                 service_data:
-                  element: clipPath8
+                  element: clipPath3
                   style: >
                     >  var width =
                     Math.ceil(elements['sensor.media_card_volume_level'].getBBox().width);
@@ -245,6 +248,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
@@ -277,6 +281,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
@@ -309,6 +314,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
@@ -341,6 +347,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
@@ -373,6 +380,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
@@ -405,6 +413,7 @@ views:
                       >
                       try{
                         const player_friendly_name = entities["input_select.mp_card_player_friendly_name"].state;
+                        console.log("hello",player_friendly_name);
                         browser_mod.service('popup',{
                           title: "Search",
                           content: 
