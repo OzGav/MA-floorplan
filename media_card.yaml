@@ -6,10 +6,12 @@ input_select:
       - Main Bedroom Player
       - Rumpus Amplifier
       - Study Player
+      - Abigail Speaker
+      - Hannah Speaker
       - Grace Speaker
       - Pixel 4a
       - Tablet
-      - Universal_Test
+
     initial: Kitchen Speaker
 
   ma_list_of_linkable_players:
@@ -129,6 +131,11 @@ template:
         unique_id: mc_group_players
         state: >
           {{ state_attr(states.sensor.media_card_player_id.state, 'group_members') }}
+      - name: "media_card_now_playing_track_uri"  
+        unique_id: mc_now_playing_track_uri
+        state: >
+          {{ state_attr(states.sensor.media_card_player_id.state, 'media_content_id') }}
+
           
 script:
   get_now_playing_card:
@@ -137,7 +144,7 @@ script:
     sequence:
       - delay:
           milliseconds: 250
-      - action: mass.get_queue
+      - action: music_assistant.get_queue
         continue_on_error: true
         data:
           entity_id:  "{{ states.sensor.media_card_player_id.state }}"
@@ -152,17 +159,17 @@ script:
                 value_template: "{{ queue_info[states.sensor.media_card_player_id.state]['active'] }}"
             sequence:
               - action: input_text.set_value
-                continue_on_error: true
+                continue_on_error: false
                 target:
                   entity_id: input_text.current_playing_artist
                 data:
                   value: >-
-                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
-                    {% set artist = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0] is defined %}
+                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.stream_title %}
+                    {% set artist = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists is defined %}
                     
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[0].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
+                    {{ stream_title.split('-')[0].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
                      else 
-                       queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if artist is defined and artist is not none}}
+                       artist if artist is defined and artist is not none}}
                     
               - action: input_text.set_value
                 continue_on_error: true
@@ -170,27 +177,32 @@ script:
                   entity_id: input_text.current_playing_title
                 data:
                   value: >-
-                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
+                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.stream_title %}
 
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title.split('-')[1].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_title.split('-')[1].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
                      else 
                        queue_info[states.sensor.media_card_player_id.state].current_item.media_item.name }}
                        
               - action: input_text.set_value
-                continue_on_error: true
+                continue_on_error: false
                 target:
                   entity_id: input_text.current_playing_album
                 data:
                   value: >-
-                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.stream_title %}
-                    {% set album = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album %}
+                    {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.stream_title %}
+                    {% set album = "null" %}
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album is defined %}
+                      {% set album = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name  %}
+                    {% endif %}
 
-                    {% if stream_title is defined and stream_title is not none %}
-                        {{ queue_info[states.sensor.media_card_player_id.state].current_item.name }}
+                    {% if (stream_title is defined and stream_title is not none) or queue_info[states.sensor.media_card_player_id.state].current_item.media_item.media_type == "radio" %}
+                        {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.name }}
                     {% else %}
-                        {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name +" " if album is not none}}
-                        {%- if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version | length > 0 -%} 
-                            ({{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version }})
+                        {% if album != "null" %}
+                          {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.name +" " if album is not none else ""}}
+                          {%- if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version | length > 0 -%} 
+                              ({{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.version }})
+                          {% endif %}
                         {% endif %}
                     {% endif %}
                                           
@@ -200,8 +212,8 @@ script:
                   entity_id: input_text.current_track_quality
                 data:
                   value: >-
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails is not none -%}
-                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.content_type | upper}} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.sample_rate | float(0) / 1000}}khz • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_depth}}bit{% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate | float(0) > 0 %} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_rate}}Kbps{% endif %}
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.stream_details is not none -%}
+                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.content_type | upper}} • {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.sample_rate | float(0) / 1000}}khz • {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.bit_depth}}bit
                     {% endif -%}
                     
               - action: input_text.set_value
@@ -210,9 +222,9 @@ script:
                   entity_id: input_text.media_card_hi_res_track
                 data:
                   value: >-
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails is not none -%}
-                      {% if (queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.sample_rate | float(0) / 1000) > 48 or
-                            (queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.audio_format.bit_depth | float(0)) > 16 %}
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.stream_details is not none -%}
+                      {% if (queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.sample_rate | float(0) / 1000) > 48 or
+                            (queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.bit_depth | float(0)) > 16 %}
                         true
                       {% else %}
                         false
@@ -225,8 +237,8 @@ script:
                   entity_id: input_text.media_card_source
                 data:
                   value: >-
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails is not none -%}
-                      /local/floorplan/images/icon-{{ queue_info[states.sensor.media_card_player_id.state].current_item.streamdetails.provider.split('-')[0].strip() }}.svg
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.stream_details is not none -%}
+                      /local/floorplan/images/icon-{{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_details.provider.split('-')[0].strip() }}.svg
                     {% endif -%}
                     
               - action: input_text.set_value
@@ -238,50 +250,7 @@ script:
                     {% if (queue_info[states.sensor.media_card_player_id.state]['items'] | float(0)) - (queue_info[states.sensor.media_card_player_id.state]['current_index'] | float(0)) != 1 %}
                       Next: {{ queue_info[states.sensor.media_card_player_id.state].next_item.name | replace('-','•')}}
                     {% endif %}
-                    
-              - action: input_text.set_value
-                continue_on_error: true
-                target:
-                  entity_id: input_text.media_card_url_to_discart_image
-                data:
-                  value: >-
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album is not none 
-                       and queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.metadata is defined -%}
-                      {% set images = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.metadata.images -%}
-                      {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
-                      {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
-                      
-                      {% if discart_images is not none -%}
-                        /imageproxy?path={{ discart_images }}&provider={{ provider }}&size=0
-                      {% else %}
-                        http://192.168.1.166:8123/local/cd.png
-                      {% endif -%}
-                    {% else %}
-                      http://192.168.1.166:8123/local/cd.png
-                    {% endif %}
-                    
-              - action: input_text.set_value
-                continue_on_error: true
-                target:
-                  entity_id: input_text.media_card_explicit_language
-                data:
-                  value: >
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.metadata.explicit is defined 
-                       and queue_info[states.sensor.media_card_player_id.state].current_item.media_item.metadata.explicit is not none -%}
-                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.metadata.explicit | lower }}
-                    {% endif %}
-                    
-              - action: input_text.set_value
-                continue_on_error: true
-                target:
-                  entity_id: input_text.media_card_favourite
-                data:
-                  value: >
-                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.favorite is defined 
-                       and queue_info[states.sensor.media_card_player_id.state].current_item.media_item.favorite is not none -%}
-                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.favorite | lower }}
-                    {% endif %}
-                    
+                                        
         default:
           - action: input_text.set_value
             target:
@@ -323,6 +292,11 @@ script:
               entity_id: input_text.media_card_url_to_discart_image
             data:
               value: "http://192.168.1.166:8123/local/empty.png"
+          # - action: input_text.set_value
+            # target:
+              # entity_id: input_text.media_card_playing_album_library_id   
+            # data:
+              # value: "1"
           - action: input_text.set_value
             target:
               entity_id: input_text.media_card_explicit_language
@@ -416,8 +390,6 @@ script:
               
   media_card_skip_unavailable_player:
     sequence:
-      - delay:
-          milliseconds: 10
       - if:
           - condition: template
             value_template: '{{ states(states("sensor.media_card_player_id")) in ["unavailable","unknown"] }}'
@@ -425,7 +397,29 @@ script:
           - service: "input_select.select_next"
             target:
               entity_id: input_select.mp_card_player_friendly_name
-            
+
+  media_card_toggle_favourite:
+    sequence:
+      - if:
+          - condition: state
+            entity_id: input_text.media_card_favourite
+            state: "true"
+        then:
+          - service: "input_text.set_value"
+            target:
+              entity_id: input_text.media_card_favourite
+            data:
+              value: "false"
+          - action: rest_command.ma_remove_favourite
+        else:
+          - service: "input_text.set_value"
+            target:
+              entity_id: input_text.media_card_favourite
+            data:
+              value: "true"
+          - action: rest_command.ma_add_favourite
+
+             
 automation:
   - alias: Update Now Playing Info
     id: update_now_playing_info
@@ -439,6 +433,59 @@ automation:
         target:
           entity_id: script.get_now_playing_card
 
+  - alias: Update Disc Image and Favorite Status
+    id: update_discart_favourite_info
+    trigger:
+      - platform: state
+        entity_id: input_text.current_playing_title
+    action:
+      - service: rest_command.ma_get_other_item_details
+        response_variable: album_info
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.media_card_url_to_discart_image
+        data:
+          value: >-
+            {% if album_info.content.metadata.images is not none and album_info.content.metadata.images is defined -%}
+              {% set images = album_info.content.metadata.images -%}
+              {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
+              {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
+
+              {% if not discart_images %}
+                {% if album_info.content.album.metadata.images is not none and album_info.content.album.metadata.images is defined -%}
+                  {% set images = album_info.content.album.metadata.images -%}
+                  {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
+                  {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
+                {% endif %}
+              {% endif %}
+              
+              {% if discart_images -%}
+                /imageproxy?path={{ discart_images }}&provider={{ provider }}&size=0
+              {% else %}
+                http://192.168.1.166:8123/local/cd.png
+              {% endif -%}
+            {% else %}
+              http://192.168.1.166:8123/local/cd.png
+            {% endif %}
+      - action: input_text.set_value
+        continue_on_error: true
+        target:
+          entity_id: input_text.media_card_favourite
+        data:
+          value: >
+            {% if album_info.content.favorite is not none and album_info.content.favorite is defined -%}
+              {{ album_info.content.favorite | lower }}
+            {% endif %}
+      - action: input_text.set_value
+        continue_on_error: true
+        target:
+          entity_id: input_text.media_card_explicit_language
+        data:
+          value: >
+            {% if album_info.content.metadata.explicit is not none and album_info.content.metadata.explicit is defined -%}
+              {{ album_info.content.metadata.explicit | lower }}
+            {% endif %}            
+            
   - alias: Skip Unavailable Player
     id: skip_unavailable_player
     trigger:
@@ -548,7 +595,7 @@ automation:
             {%- if player_provider in ["provap","provbs","provsp","provsc","provsn"] -%}
               {%- set media_players = 
                   ( states.media_player 
-                  | selectattr('attributes.mass_player_type', 'equalto', 'player') 
+                  | select('search', 'ma_') 
                   | rejectattr('entity_id', 'eq', exclude_entity_id) 
                   | selectattr('entity_id', 'contains', player_provider)                
                   | map(attribute='attributes.friendly_name') 
@@ -557,13 +604,94 @@ automation:
             {% elif player_provider in ["provug"] %}
               {%- set media_players = 
                   ( states.media_player 
-                  | selectattr('attributes.mass_player_type', 'equalto', 'player') 
+                  | select('search', 'ma_')
                   | rejectattr('entity_id', 'eq', exclude_entity_id)                
                   | map(attribute='attributes.friendly_name') 
                   | list)
               -%}
+            {% else %}
+              {% set media_players = ["No Matching Players"] %}
             {% endif %}
             {%- if media_players | length == 0 -%}
               {%- set media_players = ['No Matching Players'] -%}
             {%- endif -%}
             {{ media_players }}
+  - alias: Populate List of Available Players
+    id: populate_list_of_available_players
+    trigger:
+      - platform: time
+        at: "15:32:00"
+    action:
+      - service: input_select.set_options
+        target:
+          entity_id: input_select.mp_card_player_friendly_name
+        data:
+          options: |
+            {% set available_entities = integration_entities('mass') | select('is_state', ['off','playing','idle','paused'])  | list %}
+            [{%- for entity_id in available_entities -%}
+              {{- state_attr(entity_id, 'friendly_name') -}}{%- if not loop.last -%}, {%- endif -%}
+            {%- endfor -%}]
+          
+rest_command:
+  ma_add_favourite:
+    url: http://localhost:8095/api
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/favorites/add_item",
+        "args": {
+          "item": "{{ states.sensor.media_card_now_playing_track_uri.state }}"
+        }
+      }
+    content_type:  'application/json; charset=utf-8'
+    
+  ma_remove_favourite:
+    url: http://localhost:8095/api
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/favorites/remove_item",
+        "args": {
+          "media_type": "track",
+          "library_item_id": "{{ states.sensor.media_card_now_playing_track_uri.state.split("track/")[1] }}"
+        }
+      }
+    content_type:  'application/json; charset=utf-8' 
+
+  ma_refresh_playlist:
+    url: http://localhost:8095/api
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/playlists/playlist_tracks",
+        "args": {
+          "item_id": "31",
+          "provider_instance_id_or_domain": "library",
+          "force_refresh": true
+        }
+      }
+    content_type:  'application/json; charset=utf-8'
+    
+  ma_get_other_item_details:
+    url: "http://localhost:8095/api"
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+      content_type: "application/json; charset=utf-8"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/item_by_uri",
+        "args": {
+          "uri": "{{ states.sensor.media_card_now_playing_track_uri.state }}"
+        }
+      }   
