@@ -47,11 +47,11 @@ views:
                     if (image_name.startsWith('http'))
                       return hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/api'))
-                      return 'http://myaurouter.ddns.net:8123' + hass.states["sensor.url_to_image"].state;
+                      return 'http://192.168.1.166:8123' + hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/imageproxy'))
                       return 'http://192.168.1.166:8095' + hass.states["sensor.url_to_image"].state;
                     else
-                      return 'http://myaurouter.ddns.net:8123/local/empty.png';
+                      return 'http://192.168.1.166:8123/local/empty.png';
             - entity: input_select.ma_list_of_linkable_players
               state_action:
                 service: floorplan.text_set
