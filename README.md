@@ -1,6 +1,6 @@
 ![card](https://github.com/user-attachments/assets/82eee4b1-1cbf-4ac1-bc48-9a35b0135a10)
 
-This requires use of the `music_assistant.get_queue` action which is only available in the with the Music Assistant integration
+This requires use of the `music_assistant.get_queue` action which is only available the with the official Music Assistant integration. Music Assistant 2.4 or later is also required.
 
 To use this you need the following custom components added via HACS
 
