@@ -438,6 +438,9 @@ automation:
     trigger:
       - platform: state
         entity_id: input_text.current_playing_title
+    conditions:
+      - condition: template
+        value_template: "{{ states.sensor.media_card_now_playing_track_uri.state != 'unknown' }}"
     action:
       - service: rest_command.ma_get_other_item_details
         response_variable: album_info
