@@ -39,6 +39,11 @@ You need to ensure port 8095 is enabled for the MA webserver
 
 You need to ensure the MA player custom name are identical to the HA friendly name
 
+Latest imagery:
+
+![image](https://github.com/user-attachments/assets/5f23b29d-4b58-4871-b8e4-b3048854cbf3)
+
+
 Discart is not always retrieveable
 
 This is provided as-is without support.
