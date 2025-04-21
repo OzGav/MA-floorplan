@@ -11,7 +11,7 @@ input_select:
       - Grace Speaker
       - Pixel 4a
       - Tablet
-
+      - AirPlay pcp Group
     initial: Kitchen Speaker
 
   ma_list_of_linkable_players:
@@ -39,6 +39,8 @@ input_text:
     name: Currently Playing Title  
   current_playing_artist:
     name: Currently Playing Artist  
+  current_playing_artist_library_id_number:
+    name: Currently Playing Artist Library ID 
   current_playing_album:
     name: Currently Playing Album  
   current_track_quality:
@@ -50,6 +52,9 @@ input_text:
   media_card_url_to_discart_image:
     name: URL to Media Card Disc Art image
     max: 254
+  media_card_url_to_fanart_image:
+    name: URL to Media Card Fan Art image
+    max: 254
   media_card_explicit_language:
     name: Track contains explicit language
   media_card_favourite:
@@ -60,6 +65,8 @@ input_text:
     name: Entity_id of the selected player for linking
   media_card_selected_player_provider:
     name: The selected players MA provider
+  media_card_now_playing_album_uri:
+    name: Full URI of the album playing   
     
 template:
   - trigger:
@@ -144,11 +151,18 @@ script:
     sequence:
       - delay:
           milliseconds: 250
-      - action: music_assistant.get_queue
-        continue_on_error: true
-        data:
-          entity_id:  "{{ states.sensor.media_card_player_id.state }}"
-        response_variable: queue_info
+      - if:
+          - condition: template
+            value_template: '{{ states(states.sensor.media_card_player_id.state) not in ["unavailable","unknown",""] }}'
+        then: 
+          - action: music_assistant.get_queue
+            continue_on_error: true
+            data:
+              entity_id:  "{{ states.sensor.media_card_player_id.state }}"
+            response_variable: queue_info
+        else:
+          - variables:
+              queue_info: ""
       - choose:
           - conditions:
               - condition: template
@@ -167,7 +181,7 @@ script:
                     {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.stream_title %}
                     {% set artist = queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists[0].name if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.artists is defined %}
                     
-                    {{ stream_title.split('-')[0].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
+                    {{ stream_title.split(' - ')[0].strip() if stream_title is defined and stream_title is not none and ' - ' in stream_title
                      else 
                        artist if artist is defined and artist is not none}}
                     
@@ -179,7 +193,7 @@ script:
                   value: >-
                     {% set stream_title = queue_info[states.sensor.media_card_player_id.state].current_item.stream_title %}
 
-                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_title.split('-')[1].strip() if stream_title is defined and stream_title is not none and '-' in stream_title
+                    {{ queue_info[states.sensor.media_card_player_id.state].current_item.stream_title.split(' - ')[1].strip() if stream_title is defined and stream_title is not none and ' - ' in stream_title
                      else 
                        queue_info[states.sensor.media_card_player_id.state].current_item.media_item.name }}
                        
@@ -250,7 +264,18 @@ script:
                     {% if (queue_info[states.sensor.media_card_player_id.state]['items'] | float(0)) - (queue_info[states.sensor.media_card_player_id.state]['current_index'] | float(0)) != 1 %}
                       Next: {{ queue_info[states.sensor.media_card_player_id.state].next_item.name | replace('-','•')}}
                     {% endif %}
-                                        
+
+              - action: input_text.set_value
+                continue_on_error: true
+                target:
+                  entity_id: input_text.media_card_now_playing_album_uri
+                data:
+                  value: >-
+                    {% if queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album is defined -%}
+                      {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.uri }}
+                    {% else %}
+                      ""
+                    {% endif -%}                                      
         default:
           - action: input_text.set_value
             target:
@@ -292,11 +317,11 @@ script:
               entity_id: input_text.media_card_url_to_discart_image
             data:
               value: "http://192.168.1.166:8123/local/empty.png"
-          # - action: input_text.set_value
-            # target:
-              # entity_id: input_text.media_card_playing_album_library_id   
-            # data:
-              # value: "1"
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.media_card_now_playing_album_uri
+            data:
+              value: ""
           - action: input_text.set_value
             target:
               entity_id: input_text.media_card_explicit_language
@@ -392,7 +417,7 @@ script:
     sequence:
       - if:
           - condition: template
-            value_template: '{{ states(states("sensor.media_card_player_id")) in ["unavailable","unknown"] }}'
+            value_template: '{{ states(states("sensor.media_card_player_id")) in ["unavailable","unknown",""] }}'
         then:
           - service: "input_select.select_next"
             target:
@@ -419,7 +444,43 @@ script:
               value: "true"
           - action: rest_command.ma_add_favourite
 
-             
+  media_card_seek_fwd_30s:
+    mode: queued
+    alias: "Media Card seek forward 30 secs"
+    sequence:
+      - action: media_player.media_seek
+        continue_on_error: true
+        data:
+          entity_id:  "{{ states.sensor.media_card_player_id.state }}"
+          seek_position: >
+              {% set player_id = states.sensor.media_card_player_id.state %}
+              {% set media_position = state_attr(player_id, 'media_position') | int(0) %}
+              {% set media_position_last_updated = state_attr(player_id, 'media_position_updated_at') %}
+              {% set media_duration = state_attr(player_id, 'media_duration') | int(0) %}
+              {% if states(player_id) == 'playing' %}
+                {{ [(media_position + (utcnow() - media_position_last_updated).total_seconds() + 30) | int(0) , media_duration - 1] | min }}
+              {% else %}
+                {{ [(media_position + 30) | int(0) , media_duration - 1] | min }} 
+              {% endif %}
+
+  media_card_seek_back_30s:
+    mode: queued
+    alias: "Media Card seek back 30 secs"
+    sequence:
+      - action: media_player.media_seek
+        continue_on_error: true
+        data:
+          entity_id:  "{{ states.sensor.media_card_player_id.state }}"
+          seek_position: >
+              {% set player_id = states.sensor.media_card_player_id.state %}
+              {% set media_position = state_attr(player_id, 'media_position') | int(0) %}
+              {% set media_position_last_updated = state_attr(player_id, 'media_position_updated_at') %}
+              {% if states(player_id) == 'playing' %}
+                {{ [(media_position + (utcnow() - media_position_last_updated).total_seconds() - 30) | int(0) , 0] | max }}
+              {% else %}
+                {{ [(media_position - 30) | int(0) , 0] | max }} 
+              {% endif %}  
+
 automation:
   - alias: Update Now Playing Info
     id: update_now_playing_info
@@ -433,6 +494,46 @@ automation:
         target:
           entity_id: script.get_now_playing_card
 
+  - alias: Update Discart
+    id: update_discart_info
+    trigger:
+      - platform: state
+        entity_id: input_text.current_playing_title
+      - platform: state
+        entity_id: sensor.media_card_player_id
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states('input_text.media_card_now_playing_album_uri').split('://')[0] == 'library' }}"
+            sequence:
+              - service: rest_command.ma_get_library_album_details
+                response_variable: album_info
+              - service: input_text.set_value
+                target:
+                  entity_id: input_text.media_card_url_to_discart_image
+                data:
+                  value: >-
+                    {% if album_info.content.metadata is defined -%}
+                      {% set images = album_info.content.metadata.images -%}
+                      {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
+                      {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
+                      
+                      {% if discart_images -%}
+                        /imageproxy?path={{ discart_images | replace("&","%2526") }}&provider={{ provider }}&size=0
+                      {% else %}
+                        http://192.168.1.166:8123/local/cd.png
+                      {% endif -%}
+                    {% else %}
+                      http://192.168.1.166:8123/local/cd.png
+                    {% endif %}
+        default:
+          - action: input_text.set_value
+            target:
+              entity_id: input_text.media_card_url_to_discart_image
+            data:
+              value: "http://192.168.1.166:8123/local/cd.png"
+              
   - alias: Update Disc Image and Favorite Status
     id: update_discart_favourite_info
     trigger:
@@ -444,32 +545,6 @@ automation:
     action:
       - service: rest_command.ma_get_other_item_details
         response_variable: album_info
-      - service: input_text.set_value
-        target:
-          entity_id: input_text.media_card_url_to_discart_image
-        data:
-          value: >-
-            {% if album_info.content.metadata.images is not none and album_info.content.metadata.images is defined -%}
-              {% set images = album_info.content.metadata.images -%}
-              {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
-              {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
-
-              {% if not discart_images %}
-                {% if album_info.content.album.metadata.images is not none and album_info.content.album.metadata.images is defined -%}
-                  {% set images = album_info.content.album.metadata.images -%}
-                  {% set discart_images = images | selectattr('type', 'equalto', 'discart') | map(attribute='path') | list | first | replace(" ","%20") -%}
-                  {% set provider = images | selectattr('type', 'equalto', 'discart') | map(attribute='provider') | list | first -%}
-                {% endif %}
-              {% endif %}
-              
-              {% if discart_images -%}
-                /imageproxy?path={{ discart_images | replace("&","%2526") }}&provider={{ provider }}&size=0
-              {% else %}
-                http://192.168.1.166:8123/local/cd.png
-              {% endif -%}
-            {% else %}
-              http://192.168.1.166:8123/local/cd.png
-            {% endif %}
       - action: input_text.set_value
         continue_on_error: true
         target:
@@ -487,7 +562,73 @@ automation:
           value: >
             {% if album_info.content.metadata.explicit is not none and album_info.content.metadata.explicit is defined -%}
               {{ album_info.content.metadata.explicit | lower }}
-            {% endif %}            
+            {% endif %}   
+            
+  - alias: Update Artist Fanart
+    id: update_artist_fanart
+    trigger:
+      - platform: state
+        entity_id: input_text.current_playing_artist
+      - platform: state
+        entity_id: sensor.media_card_player_id
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states.input_text.current_playing_artist.state != '' }}"
+            sequence:
+              - action: music_assistant.get_library
+                data:
+                  album_artists_only: false
+                  config_entry_id: 01JMYCMQJ55CR9E7YZW3VKEA4F
+                  media_type: artist
+                  limit: 1
+                  search: "{{ states.input_text.current_playing_artist.state }}"
+                response_variable: artist_library_info
+        default:
+          - variables:
+              artist_library_info: ""
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.current_playing_artist_library_id_number
+        data:
+          value: >-
+            {% if artist_library_info and artist_library_info['items'] and artist_library_info['items'][0].uri is defined %}
+              {{ artist_library_info['items'][0].uri.split('/')[-1] }}
+            {% else %}
+              -1
+            {% endif %}
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ states.input_text.current_playing_artist_library_id_number.state != '-1' }}"
+            sequence:
+              - service: rest_command.ma_get_library_artist_details
+                response_variable: artist_info
+        default:
+          - variables:
+              artist_info: ""
+      - service: input_text.set_value
+        target:
+          entity_id: input_text.media_card_url_to_fanart_image
+        data:
+          value: >-
+            {% if states.input_text.current_playing_artist_library_id_number.state != "-1" %}
+              {% set images = artist_info.content.metadata.images -%}
+              {% set fanart_image = images | selectattr('type', 'equalto', 'fanart') | map(attribute='path') | list | first | replace(" ","%20") -%}
+              {% set provider = images | selectattr('type', 'equalto', 'fanart') | map(attribute='provider') | list | first -%}
+            {% else %}
+              {% set fanart_image = "" %}
+            {% endif %}
+            {% if fanart_image %}
+              {% if fanart_image.startswith('http') %}
+                {{ fanart_image }}
+              {% else %}
+                /imageproxy?path={{ fanart_image | replace("&","%2526") }}&provider={{ provider }}&size=0
+              {% endif %}
+            {% else %}
+              http://192.168.1.166:8123/local/empty.png
+            {% endif -%}
             
   - alias: Skip Unavailable Player
     id: skip_unavailable_player
@@ -634,7 +775,7 @@ automation:
             [{%- for entity_id in available_entities -%}
               {{- state_attr(entity_id, 'friendly_name') -}}{%- if not loop.last -%}, {%- endif -%}
             {%- endfor -%}]
-          
+
 rest_command:
   ma_add_favourite:
     url: http://localhost:8095/api
@@ -667,23 +808,57 @@ rest_command:
       }
     content_type:  'application/json; charset=utf-8' 
 
-  ma_refresh_playlist:
-    url: http://localhost:8095/api
+  ma_get_library_track_details:
+    url: "http://localhost:8095/api"
     method: POST
     headers:
       accept: "application/json, text/html"
+      content_type: "application/json; charset=utf-8"
     payload: >
       {
         "message_id": "1",
-        "command": "music/playlists/playlist_tracks",
+        "command": "music/get_library_item",
         "args": {
-          "item_id": "31",
-          "provider_instance_id_or_domain": "library",
-          "force_refresh": true
+          "media_type": "track",
+          "item_id": "{{ states('sensor.media_card_now_playing_track_uri').split('/')[-1] }}",
+          "provider_instance_id_or_domain": "library"
         }
-      }
-    content_type:  'application/json; charset=utf-8'
-    
+      }  
+
+  ma_get_library_album_details:
+    url: "http://localhost:8095/api"
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+      content_type: "application/json; charset=utf-8"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/get_library_item",
+        "args": {
+          "media_type": "album",
+          "item_id": "{{ states('input_text.media_card_now_playing_album_uri').split('/')[-1] | int(0) }}",
+          "provider_instance_id_or_domain": "library"
+        }
+      }  
+
+  ma_get_library_artist_details:
+    url: "http://localhost:8095/api"
+    method: POST
+    headers:
+      accept: "application/json, text/html"
+      content_type: "application/json; charset=utf-8"
+    payload: >
+      {
+        "message_id": "1",
+        "command": "music/get_library_item",
+        "args": {
+          "media_type": "artist",
+          "item_id": "{{ states.input_text.current_playing_artist_library_id_number.state }}",
+          "provider_instance_id_or_domain": "library"
+        }
+      } 
+          
   ma_get_other_item_details:
     url: "http://localhost:8095/api"
     method: POST
