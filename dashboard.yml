@@ -13,10 +13,10 @@ views:
                 cache: false
               - min_width: 700
                 location: /local/floorplan/media-player-card.svg
-                cache: true
+                cache: false
           stylesheet:
             location: /local/floorplan/media-player-card.css
-            cache: false
+            cache: true
           defaults:
             hover_action: false
             tap_action: false
@@ -52,6 +52,22 @@ views:
                       return 'http://192.168.1.166:8095' + hass.states["sensor.url_to_image"].state;
                     else
                       return 'http://192.168.1.166:8123/local/empty.png';
+            - entity: input_text.media_card_url_to_fanart_image
+              element: fanart
+              state_action:
+                - service: floorplan.image_set
+                  service_data: >
+                    > var image_name =
+                    hass.states["input_text.media_card_url_to_fanart_image"].state;
+
+                    if (image_name.startsWith('http'))
+                      return image_name;
+                    else if (image_name.startsWith('/api'))
+                      return 'http://192.168.1.166:8123' + image_name;
+                    else if (image_name.startsWith('/imageproxy'))
+                      return 'http://192.168.1.166:8095' + image_name;
+                    else
+                      return 'http://192.168.1.166:8123/local/empty.png';                     
             - entity: input_select.ma_list_of_linkable_players
               state_action:
                 service: floorplan.text_set
@@ -77,8 +93,8 @@ views:
                 service: floorplan.class_set
                 service_data:
                   class: >-
-                    ${(entity.state === "true") ? "fillheart-on" :
-                    "fillheart-off"}
+                    ${(entity.state === "true") ? "always-visible" :
+                    "always-invisible"}
             - entity: script.media_card_toggle_favourite
               tap_action:
                 service: script.turn_on
@@ -93,20 +109,19 @@ views:
                     fill:
                     ${(hass.states[hass.states["sensor.media_card_player_id"].state].state
                     === "off") ? "red" : "green"}
-            - entity: sensor.media_card_mute_mode
-              state_action:
-                service: floorplan.class_set
-                service_data:
-                  class: >-
-                    ${(entity.state === "True") ? "always-visible" :
-                    "always-invisible"}
             - element: mute_player
               entity: sensor.media_card_mute_mode
               tap_action:
                 service: media_player.volume_mute
                 service_data:
                   entity_id: ${hass.states["sensor.media_card_player_id"].state}
-                  is_volume_muted: '${(entity.state === "True") ? "false" : "True"}'
+                  is_volume_muted: '${(entity.state === "True") ? "false" : "true"}'
+              state_action:
+                service: floorplan.class_set
+                service_data:
+                  class: >-
+                    ${(entity.state === "False") ? "always-visible" :
+                    "always-invisible"}
             - entity: sensor.media_card_volume_level
               element: volume_level
               state_action:
@@ -164,6 +179,16 @@ views:
                 service: media_player.media_previous_track
                 service_data:
                   entity_id: ${hass.states["sensor.media_card_player_id"].state}
+            - element: seek_fwd
+              tap_action:
+                service: script.turn_on
+                service_data:
+                  entity_id: script.media_card_seek_fwd_30s
+            - element: seek_back
+              tap_action:
+                service: script.turn_on
+                service_data:
+                  entity_id: script.media_card_seek_back_30s
             - entity: script.media_card_set_shuffle_mode
               tap_action:
                 service: script.turn_on
@@ -325,12 +350,32 @@ views:
                             card_mod: {
                               style: `
                                 ha-dialog {
-                                  --mdc-dialog-min-width: 1200px !important;
+                                  --mdc-dialog-min-width: fit-content !important;
                                   --mdc-dialog-max-width: 1850px !important;
+                                  --mdc-dialog-min-height: fit-content !important;
+                                  --mdc-dialog-max-height: 1000px !important;
+                                  padding: 0 !important;
+                                  margin: 0 !important; 
+                                  display: flex;
+                                  flex-direction: column;
                                 }
                                 .content {
-                                  width: auto !important;
-                              }`
+                                  width: 90vw !important;
+                                  height: 80vh !important;
+                                  border: none;
+                                  padding: 0 !important;
+                                  margin: 0 !important; 
+                                  display: flex;
+                                  flex-direction: column;
+                                }
+                                iframe {
+                                  width: 85vw !important;
+                                  height: 75vh !important;
+                                  border: none !important;
+                                  display: block;
+                                  flex-grow: 1; 
+                                }      
+                              `
                             }
                         });
                       }catch(e){
