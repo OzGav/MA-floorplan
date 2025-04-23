@@ -33,7 +33,7 @@ If you don't add the suffix then all MA players will be shown as an option to li
 
 You may see warnings in your HA log about an input select not having a valid option anymore. This is normal for dynamically created input_select lists
 
-You need to edit `media-card.yaml` and add the friendly names for your players to the first `input_select`. These are case sensitive.
+You need to edit `media-card.yaml` and add the friendly names for your players to the first `input_select`. These are case sensitive. You also need to change any IP addresses to your own server's IP address. Lastly you must change any instances of `config_entry_id` to your instance's. You can obtain that by going to the dev tools in HA and setting up a `get_library` action via the UI and selecting your MA instance from the dropdown and then switch to YAML mode and get the value. 
 
 You need to ensure port 8095 is enabled for the MA webserver
 
