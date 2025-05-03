@@ -67,6 +67,20 @@ input_text:
     name: The selected players MA provider
   media_card_now_playing_album_uri:
     name: Full URI of the album playing   
+
+input_number:
+  media_position_calculated:
+    name: Media Position Calculated
+    min: 0
+    max: 180000
+    mode: box
+    unit_of_measurement: s
+  media_position_percentage:
+    name: Media Position Percentage
+    min: 0
+    max: 100
+    step: 0.01
+    mode: slider
     
 template:
   - trigger:
@@ -275,7 +289,8 @@ script:
                       {{ queue_info[states.sensor.media_card_player_id.state].current_item.media_item.album.uri }}
                     {% else %}
                       ""
-                    {% endif -%}                                      
+                    {% endif -%}                
+                                        
         default:
           - action: input_text.set_value
             target:
@@ -481,6 +496,34 @@ script:
                 {{ [(media_position - 30) | int(0) , 0] | max }} 
               {% endif %}  
 
+  calculate_media_position:
+    mode: restart
+    alias: "Media Card calculate media position"
+    sequence:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.media_position_calculated
+        data:
+          value: >
+              {% set player_id = states.sensor.media_card_player_id.state %}
+              {% set media_position = state_attr(player_id, 'media_position') | int(0) %}
+              {% if states(states.sensor.media_card_player_id.state) == 'playing' %}
+                {% set media_position_last_updated = state_attr(player_id, 'media_position_updated_at') %}
+                {{ (media_position + (utcnow() - media_position_last_updated).total_seconds() ) | int(0) }}
+              {% else %}
+                {% if states(states.sensor.media_card_player_id.state) == 'paused' %}
+                  {{ media_position }}
+                {% else %}
+                  0
+                {% endif %}
+              {% endif %}
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.media_position_percentage
+        data:
+          value: >
+              {% set player_id = states.sensor.media_card_player_id.state %}
+              {{ (states.input_number.media_position_calculated.state | float(0)) / (state_attr(player_id, 'media_duration') | float(1)) }}            
 automation:
   - alias: Update Now Playing Info
     id: update_now_playing_info
@@ -493,6 +536,32 @@ automation:
       - service: script.turn_on
         target:
           entity_id: script.get_now_playing_card
+
+  - alias: Update Media Position On State Change
+    id: update_media_position_on_state_change
+    trigger:
+      - platform: state
+        entity_id: input_text.current_playing_title
+      - platform: state
+        entity_id: sensor.media_card_player_id
+    action:
+      - service: script.turn_on
+        target:
+          entity_id: script.calculate_media_position
+
+  - alias: Update Media Position On Time
+    id: update_media_position_on_time
+    trigger:
+      - platform: time_pattern
+        seconds: "/1"
+    conditions:
+      - condition: template
+        value_template: "{{ states(states.sensor.media_card_player_id.state) == 'playing' }}"
+    action:
+      - service: script.turn_on
+        target:
+          entity_id: script.calculate_media_position
+
 
   - alias: Update Discart
     id: update_discart_info
@@ -775,7 +844,7 @@ automation:
             [{%- for entity_id in available_entities -%}
               {{- state_attr(entity_id, 'friendly_name') -}}{%- if not loop.last -%}, {%- endif -%}
             {%- endfor -%}]
-
+          
 rest_command:
   ma_add_favourite:
     url: http://localhost:8095/api
