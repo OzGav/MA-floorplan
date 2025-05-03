@@ -47,11 +47,11 @@ views:
                     if (image_name.startsWith('http'))
                       return hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/api'))
-                      return 'http://192.168.1.166:8123' + hass.states["sensor.url_to_image"].state;
+                      return 'http://myaurouter.ddns.net:8123' + hass.states["sensor.url_to_image"].state;
                     else if (image_name.startsWith('/imageproxy'))
                       return 'http://192.168.1.166:8095' + hass.states["sensor.url_to_image"].state;
                     else
-                      return 'http://192.168.1.166:8123/local/empty.png';
+                      return 'http://myaurouter.ddns.net:8123/local/empty.png';
             - entity: input_text.media_card_url_to_fanart_image
               element: fanart
               state_action:
@@ -63,11 +63,11 @@ views:
                     if (image_name.startsWith('http'))
                       return image_name;
                     else if (image_name.startsWith('/api'))
-                      return 'http://192.168.1.166:8123' + image_name;
+                      return 'http://myaurouter.ddns.net:8123' + image_name;
                     else if (image_name.startsWith('/imageproxy'))
                       return 'http://192.168.1.166:8095' + image_name;
                     else
-                      return 'http://192.168.1.166:8123/local/empty.png';                     
+                      return 'http://myaurouter.ddns.net:8123/local/empty.png';                     
             - entity: input_select.ma_list_of_linkable_players
               state_action:
                 service: floorplan.text_set
@@ -156,6 +156,41 @@ views:
                     return `transform:
                       translate(${-Math.floor((1-entity.state) / (1 /
                       width),0)}px)`;
+            - entity: input_number.media_position_percentage
+              state_action:
+                service: floorplan.style_set
+                service_data:
+                  element: clipPath3-1
+                  style: >
+                    >  var width =
+                    Math.ceil(elements['input_number.media_position_percentage'].getBBox().width);
+                    console.log("width",width);
+                    return `transform:
+                      translate(${-Math.floor((1-entity.state) / (1 /
+                      width),0)}px)`;
+            - entity: input_number.media_position_calculated
+              element: media_position
+              state_action:
+                - service: floorplan.text_set
+                  service_data: >-
+                    > var seconds = entity.state;
+                    if (seconds > 3600)
+                      return (new Date(seconds * 1000).toISOString().slice(11, 19));
+                    else
+                      return (new Date(seconds * 1000).toISOString().slice(14, 19));
+            - entity: input_number.media_position_calculated
+              element: media_duration
+              state_action:
+                - service: floorplan.text_set
+                  service_data: >-
+                    > if (typeof hass.states[hass.states["sensor.media_card_player_id"].state].attributes.media_duration !== 'undefined') 
+                        var seconds = (hass.states[hass.states["sensor.media_card_player_id"].state].attributes.media_duration);
+                    else
+                      seconds = 0;
+                    if (seconds > 3600)
+                      return (new Date(seconds * 1000).toISOString().slice(11, 19));
+                    else
+                      return (new Date(seconds * 1000).toISOString().slice(14, 19));
             - element: play_button
               tap_action:
                 service: media_player.media_play_pause
